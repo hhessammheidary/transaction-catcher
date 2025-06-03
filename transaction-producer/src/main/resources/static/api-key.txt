@@ -1,9 +1,0 @@
-api key: 7cef9237ec2d417f8c30145c88013e45
-HTTPS:   https://mainnet.infura.io/v3/7cef9237ec2d417f8c30145c88013e45
-
-
-
-curl https://mainnet.infura.io/v3/7cef9237ec2d417f8c30145c88013e45 \
-  -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc": "2.0", "method": "eth_getBlockByNumber", "params": ["latest",true], "id": 1}'
