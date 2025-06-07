@@ -2,11 +2,10 @@ package com.yo.transactionproducer.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yo.transactionproducer.model.Transaction;
+import com.yo.transactionproducer.DTO.TransactionDTO;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -27,18 +26,17 @@ public class TransactionFetcherService {
     @Scheduled(fixedRate = 3000)
     public void fetchTransactionsContinuously() {
         try {
-            List<Transaction> transactions = blockFetcherService.getTransactions();
-            if (!transactions.isEmpty()) {
-                log.info("Fetched {} new transactions", transactions.size());
+            List<TransactionDTO> transactionDTOs = blockFetcherService.getTransactions();
+            if (!transactionDTOs.isEmpty()) {
+                log.info("Fetched {} new transactions", transactionDTOs.size());
 
-                transactions.forEach(tx -> {
+                transactionDTOs.forEach(tx -> {
                     try {
                         kafkaTemplate.send(topicName, objectMapper.writeValueAsString(tx));
                     } catch (JsonProcessingException e) {
                         log.error("Error serializing transaction {}", tx.getHash(), e);
                     }
                 });
-                // transactions.forEach(tx -> log.info("Transaction: {}", tx.getHash()));
             } else {
                 log.info("No new transactions found");
             }

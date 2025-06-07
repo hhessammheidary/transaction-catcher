@@ -1,9 +1,10 @@
 package com.yo.transactionproducer.service;
 
-import com.yo.transactionproducer.model.Transaction;
+import com.yo.transactionproducer.DTO.TransactionDTO;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
@@ -18,11 +19,10 @@ import java.util.stream.Collectors;
 
 @Service
 public class BlockFetcherService {
-    String apiKey = "7cef9237ec2d417f8c30145c88013e45";
-    String url = "https://mainnet.infura.io/v3/" + apiKey;
+    @Value("${infura.endpoint}")
+    String url;
     private Web3j web3j;
     private String currentBlockNumber;
-    private static final Logger log = LoggerFactory.getLogger(BlockFetcherService.class);
 
     @PostConstruct
     public void init() throws IOException, ExecutionException, InterruptedException {
@@ -45,27 +45,23 @@ public class BlockFetcherService {
         if (latestBlockNumber.equals(currentBlockNumber)) {
             return null;
         }
-//        else if(Integer.parseInt(latestBlockNumber) - Integer.parseInt(currentBlockNumber) > 1){
-//            log.info("block {} missed", Integer.parseInt(latestBlockNumber) - 1);
-//        }
         return web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, true)
                 .send()
                 .getBlock();
     }
 
-    public List<Transaction> getTransactions() throws IOException, ExecutionException, InterruptedException {
+    public List<TransactionDTO> getTransactions() throws IOException, ExecutionException, InterruptedException {
         EthBlock.Block block = getBlock();
         if (block == null) {
             return Collections.emptyList();
         }
 
-        // Update current block number
         this.currentBlockNumber = block.getNumber().toString();
 
         return block.getTransactions().stream()
                 .map(txResult -> {
                     EthBlock.TransactionObject tx = (EthBlock.TransactionObject) txResult.get();
-                    return new Transaction(
+                    return new TransactionDTO(
                             tx.getBlockHash(),
                             tx.getBlockNumber(),
                             tx.getChainId(),

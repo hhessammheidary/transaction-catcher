@@ -25,18 +25,15 @@ public class TransactionConsumerService {
     @KafkaListener(topics = "${transaction.topic.name}", groupId = "transaction-group1")
     public void consumeTransaction(String transactionJson) {
         try {
-            Transaction transaction = objectMapper.readValue(transactionJson, Transaction.class);
-            log.info("Consumed transaction: {}", transaction.getHash());
-            processTransaction(transaction);
+            processTransaction(transactionJson);
         } catch (JsonProcessingException e) {
             log.error("Error deserializing transaction JSON", e);
         }
     }
 
-    private void processTransaction(Transaction transaction) {
+    private void processTransaction(String transactionJson) throws JsonProcessingException {
+        Transaction transaction = objectMapper.readValue(transactionJson, Transaction.class);
+        log.info("Consumed transaction: {}", transaction.getHash());
         repository.save(transaction);
-        System.out.println("Processing transaction from: " + transaction.getFrom());
-        System.out.println("To: " + transaction.getTo());
-        System.out.println("Value: " + transaction.getValue());
     }
 }

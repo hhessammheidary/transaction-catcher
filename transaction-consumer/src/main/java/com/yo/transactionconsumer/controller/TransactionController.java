@@ -1,14 +1,15 @@
 package com.yo.transactionconsumer.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yo.transactionconsumer.DTO.TransactionDTO;
 import com.yo.transactionconsumer.model.Transaction;
 import com.yo.transactionconsumer.repository.TransactionRepo;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class TransactionController {
@@ -19,34 +20,56 @@ public class TransactionController {
         this.transactionRepo = transactionRepo;
     }
 
-//    @RequestMapping(value = "/")
-//    public void redirect(HttpServletResponse response) throws IOException {
-//        response.sendRedirect("/swagger-ui.html");
-//    }
+    private TransactionDTO convertToDTO(Transaction transaction) {
+        return new TransactionDTO(
+                transaction.getHash(),
+                transaction.getFrom(),
+                transaction.getTo(),
+                transaction.getValue(),
+                transaction.getGasPrice()
+        );
+    }
 
     @GetMapping("/transactions/from/{address}")
-    public List<Transaction> findTransactionByFrom(@PathVariable String address) {
-        return transactionRepo.findByFrom(address);
+    public ResponseEntity<List<TransactionDTO>> findTransactionByFrom(@PathVariable String address) {
+        List<TransactionDTO> dtos = transactionRepo.findByFrom(address)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        return dtos.isEmpty()
+                ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
+                : new ResponseEntity<>(dtos, HttpStatus.OK);
     }
 
     @GetMapping("/transactions/to/{address}")
-    public List<Transaction> findTransactionByTo(@PathVariable String address) {
-        return transactionRepo.findByTo(address);
+    public ResponseEntity<List<TransactionDTO>> findTransactionByTo(@PathVariable String address) {
+        List<TransactionDTO> dtos = transactionRepo.findByTo(address)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        return dtos.isEmpty()
+                ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
+                : new ResponseEntity<>(dtos, HttpStatus.OK);
     }
 
     @GetMapping("/transactions/filter")
-    public List<Transaction> findTransaction(
+    public ResponseEntity<List<TransactionDTO>> findTransaction(
             @RequestParam String from,
             @RequestParam String to,
-            @RequestParam(defaultValue = "or") String op){
-        if (op.equals("and")){
-            return transactionRepo.findByFromAndTo(from, to);
-        }
-        else {
-            return transactionRepo.findByFromOrTo(from, to);
-        }
+            @RequestParam(defaultValue = "or") String op) {
+
+        List<Transaction> transactions = op.equals("and")
+                ? transactionRepo.findByFromAndTo(from, to)
+                : transactionRepo.findByFromOrTo(from, to);
+
+        List<TransactionDTO> dtos = transactions.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        return dtos.isEmpty()
+                ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
+                : new ResponseEntity<>(dtos, HttpStatus.OK);
     }
-
-
-
 }
